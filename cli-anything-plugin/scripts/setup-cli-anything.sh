@@ -71,7 +71,7 @@ install_alias() {
     if [ -d "$path" ]; then
         echo -e "${YELLOW}⚠${NC} Cannot write alias at ${path}: path is a directory."
         echo -e "${YELLOW}   Remove/rename it and re-run setup to restore this alias.${NC}"
-        return 0
+        return 1
     fi
 
     if ! cat > "$path" <<EOF
@@ -82,7 +82,7 @@ $body
 EOF
     then
         echo -e "${YELLOW}⚠${NC} Failed to write alias at ${path}."
-        return 0
+        return 1
     fi
 }
 
@@ -92,6 +92,7 @@ install_command_aliases() {
     # These aliases make `/cli-anything` and related commands always available.
     local commands_dir="${HOME}/.claude/commands"
     local alias_dir="${commands_dir}/cli-anything"
+    local alias_failures=0
 
     echo ""
     echo "Installing command aliases in ${commands_dir} ..."
@@ -102,40 +103,66 @@ install_command_aliases() {
         return 0
     fi
 
-    install_alias \
+    if ! install_alias \
         "${commands_dir}/cli-anything.md" \
         "Build a CLI-Anything harness for a local path or repository." \
         'Read HARNESS.md from the installed cli-anything plugin if available, then execute the full cli-anything build workflow for: $ARGUMENTS'
+    then
+        alias_failures=$((alias_failures + 1))
+    fi
 
-    install_alias \
+    if ! install_alias \
         "${alias_dir}/default.md" \
         "Build a CLI-Anything harness for a local path or repository." \
         'Read HARNESS.md from the installed cli-anything plugin if available, then execute the full cli-anything build workflow for: $ARGUMENTS'
+    then
+        alias_failures=$((alias_failures + 1))
+    fi
 
-    install_alias \
+    if ! install_alias \
         "${alias_dir}/refine.md" \
         "Refine an existing harness and expand capability coverage." \
         'Read HARNESS.md from the installed cli-anything plugin if available, then refine the existing harness using this input: $ARGUMENTS'
+    then
+        alias_failures=$((alias_failures + 1))
+    fi
 
-    install_alias \
+    if ! install_alias \
         "${alias_dir}/test.md" \
         "Run harness tests and update TEST.md with results." \
         'Read HARNESS.md from the installed cli-anything plugin if available, then run the test workflow for: $ARGUMENTS'
+    then
+        alias_failures=$((alias_failures + 1))
+    fi
 
-    install_alias \
+    if ! install_alias \
         "${alias_dir}/validate.md" \
         "Validate a harness against HARNESS.md standards." \
         'Read HARNESS.md from the installed cli-anything plugin if available, then run the validation workflow for: $ARGUMENTS'
+    then
+        alias_failures=$((alias_failures + 1))
+    fi
 
-    install_alias \
+    if ! install_alias \
         "${alias_dir}/list.md" \
         "List discovered CLI-Anything harnesses." \
         'List and summarize discovered CLI-Anything harnesses using this input: $ARGUMENTS'
+    then
+        alias_failures=$((alias_failures + 1))
+    fi
 
-    echo -e "${GREEN}✓${NC} Installed command aliases at ${commands_dir}"
+    if [ "${alias_failures}" -eq 0 ]; then
+        echo -e "${GREEN}✓${NC} Installed command aliases at ${commands_dir}"
+        return 0
+    fi
+
+    echo -e "${YELLOW}⚠${NC} Alias installation completed with ${alias_failures} error(s)."
+    return 1
 }
 
-install_command_aliases
+if ! install_command_aliases; then
+    echo -e "${YELLOW}⚠${NC} Some commands may be unavailable until alias issues are resolved."
+fi
 
 echo ""
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

@@ -64,57 +64,78 @@ if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
     echo -e "${YELLOW}Install with: pip install ${MISSING_PACKAGES[*]}${NC}"
 fi
 
-# Install user-level command aliases for Claude Code v2.
-# Some builds expose plugin commands only in namespaced form (`/cli-anything:default`).
-# These aliases make `/cli-anything` and related commands always available.
-echo ""
-echo "Installing command aliases in ~/.claude/commands ..."
-CLAUDE_COMMANDS_DIR="${HOME}/.claude/commands"
-mkdir -p "${CLAUDE_COMMANDS_DIR}/cli-anything"
+install_alias() {
+    local path="$1"
+    local description="$2"
+    local body="$3"
+    if [ -d "$path" ]; then
+        echo -e "${YELLOW}⚠${NC} Cannot write alias at ${path}: path is a directory."
+        echo -e "${YELLOW}   Remove/rename it and re-run setup to restore this alias.${NC}"
+        return 0
+    fi
 
-cat > "${CLAUDE_COMMANDS_DIR}/cli-anything.md" <<'EOF'
+    if ! cat > "$path" <<EOF
 ---
-description: Build a CLI-Anything harness for a local path or repository.
+description: $description
 ---
-Read HARNESS.md from the installed cli-anything plugin if available, then execute the full cli-anything build workflow for: $ARGUMENTS
+$body
 EOF
+    then
+        echo -e "${YELLOW}⚠${NC} Failed to write alias at ${path}."
+        return 0
+    fi
+}
 
-cat > "${CLAUDE_COMMANDS_DIR}/cli-anything/default.md" <<'EOF'
----
-description: Build a CLI-Anything harness for a local path or repository.
----
-Read HARNESS.md from the installed cli-anything plugin if available, then execute the full cli-anything build workflow for: $ARGUMENTS
-EOF
+install_command_aliases() {
+    # Install user-level command aliases for Claude Code v2.
+    # Some builds expose plugin commands only in namespaced form (`/cli-anything:default`).
+    # These aliases make `/cli-anything` and related commands always available.
+    local commands_dir="${HOME}/.claude/commands"
+    local alias_dir="${commands_dir}/cli-anything"
 
-cat > "${CLAUDE_COMMANDS_DIR}/cli-anything/refine.md" <<'EOF'
----
-description: Refine an existing harness and expand capability coverage.
----
-Read HARNESS.md from the installed cli-anything plugin if available, then refine the existing harness using this input: $ARGUMENTS
-EOF
+    echo ""
+    echo "Installing command aliases in ${commands_dir} ..."
 
-cat > "${CLAUDE_COMMANDS_DIR}/cli-anything/test.md" <<'EOF'
----
-description: Run harness tests and update TEST.md with results.
----
-Read HARNESS.md from the installed cli-anything plugin if available, then run the test workflow for: $ARGUMENTS
-EOF
+    if ! mkdir -p "${commands_dir}" "${alias_dir}" 2>/dev/null; then
+        echo -e "${YELLOW}⚠${NC} Cannot write ${commands_dir}. Skipping alias installation."
+        echo -e "${YELLOW}   You can still use namespaced commands like /cli-anything:default${NC}"
+        return 0
+    fi
 
-cat > "${CLAUDE_COMMANDS_DIR}/cli-anything/validate.md" <<'EOF'
----
-description: Validate a harness against HARNESS.md standards.
----
-Read HARNESS.md from the installed cli-anything plugin if available, then run the validation workflow for: $ARGUMENTS
-EOF
+    install_alias \
+        "${commands_dir}/cli-anything.md" \
+        "Build a CLI-Anything harness for a local path or repository." \
+        'Read HARNESS.md from the installed cli-anything plugin if available, then execute the full cli-anything build workflow for: $ARGUMENTS'
 
-cat > "${CLAUDE_COMMANDS_DIR}/cli-anything/list.md" <<'EOF'
----
-description: List discovered CLI-Anything harnesses.
----
-List and summarize discovered CLI-Anything harnesses using this input: $ARGUMENTS
-EOF
+    install_alias \
+        "${alias_dir}/default.md" \
+        "Build a CLI-Anything harness for a local path or repository." \
+        'Read HARNESS.md from the installed cli-anything plugin if available, then execute the full cli-anything build workflow for: $ARGUMENTS'
 
-echo -e "${GREEN}✓${NC} Installed command aliases at ${CLAUDE_COMMANDS_DIR}"
+    install_alias \
+        "${alias_dir}/refine.md" \
+        "Refine an existing harness and expand capability coverage." \
+        'Read HARNESS.md from the installed cli-anything plugin if available, then refine the existing harness using this input: $ARGUMENTS'
+
+    install_alias \
+        "${alias_dir}/test.md" \
+        "Run harness tests and update TEST.md with results." \
+        'Read HARNESS.md from the installed cli-anything plugin if available, then run the test workflow for: $ARGUMENTS'
+
+    install_alias \
+        "${alias_dir}/validate.md" \
+        "Validate a harness against HARNESS.md standards." \
+        'Read HARNESS.md from the installed cli-anything plugin if available, then run the validation workflow for: $ARGUMENTS'
+
+    install_alias \
+        "${alias_dir}/list.md" \
+        "List discovered CLI-Anything harnesses." \
+        'List and summarize discovered CLI-Anything harnesses using this input: $ARGUMENTS'
+
+    echo -e "${GREEN}✓${NC} Installed command aliases at ${commands_dir}"
+}
+
+install_command_aliases
 
 echo ""
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -123,10 +144,12 @@ echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━
 echo ""
 echo "Available commands:"
 echo ""
-echo -e "  ${BLUE}/cli-anything${NC} <path-or-repo>       - Build complete CLI harness"
+echo -e "  ${BLUE}/cli-anything${NC} <path-or-repo>         - Build complete CLI harness"
+echo -e "  ${BLUE}/cli-anything:default${NC} <path-or-repo> - Build command (namespaced fallback)"
 echo -e "  ${BLUE}/cli-anything:refine${NC} <path> [focus] - Refine existing harness"
 echo -e "  ${BLUE}/cli-anything:test${NC} <path-or-repo>   - Run tests and update TEST.md"
 echo -e "  ${BLUE}/cli-anything:validate${NC} <path-or-repo> - Validate against standards"
+echo -e "  ${BLUE}/cli-anything:list${NC} [path-or-repo]   - List discovered harnesses"
 echo ""
 echo "Examples:"
 echo ""
@@ -134,6 +157,7 @@ echo -e "  ${BLUE}/cli-anything${NC} /home/user/gimp"
 echo -e "  ${BLUE}/cli-anything:refine${NC} /home/user/blender \"particle systems\""
 echo -e "  ${BLUE}/cli-anything:test${NC} /home/user/inkscape"
 echo -e "  ${BLUE}/cli-anything:validate${NC} /home/user/audacity"
+echo -e "  ${BLUE}/cli-anything:list${NC} /home/user"
 echo ""
 echo "Documentation:"
 echo ""

@@ -20,7 +20,6 @@ echo "Required files:"
 check_file ".claude-plugin/plugin.json"
 check_file "README.md"
 check_file "LICENSE"
-check_file "PUBLISHING.md"
 check_file "commands/cli-anything.md"
 check_file "commands/default.md"
 check_file "commands/list.md"
@@ -55,7 +54,7 @@ elif not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', name):
     errors.append('name must be kebab-case')
 
 version = plugin.get('version')
-if not isinstance(version, str) or not re.fullmatch(r'(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?', version):
+if not isinstance(version, str) or not re.fullmatch(r'(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?', version):
     errors.append('version must be semver (e.g. 1.0.0)')
 
 description = plugin.get('description')
@@ -125,7 +124,7 @@ else:
         if not isinstance(name, str) or not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', name or ''):
             errors.append(f'plugins[{i}].name must be kebab-case')
         version = item.get('version')
-        if not isinstance(version, str) or not re.fullmatch(r'(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?', version):
+        if not isinstance(version, str) or not re.fullmatch(r'(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?', version):
             errors.append(f'plugins[{i}].version must be semver')
         source = item.get('source')
         if not isinstance(source, str) or not source.startswith('./'):

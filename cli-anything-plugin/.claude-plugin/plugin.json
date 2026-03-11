@@ -1,5 +1,6 @@
 {
   "name": "cli-anything",
+  "version": "1.0.3",
   "description": "Build powerful, stateful CLI interfaces for any GUI application using the cli-anything harness methodology.",
   "author": {
     "name": "cli-anything contributors"

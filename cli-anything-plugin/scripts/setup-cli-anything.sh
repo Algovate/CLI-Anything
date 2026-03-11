@@ -12,7 +12,7 @@ NC='\033[0m' # No Color
 
 # Plugin info
 PLUGIN_NAME="cli-anything"
-PLUGIN_VERSION="1.0.0"
+PLUGIN_VERSION="1.0.3"
 
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BLUE}  cli-anything Plugin v${PLUGIN_VERSION}${NC}"
@@ -63,6 +63,58 @@ if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
     echo -e "${YELLOW}Missing packages: ${MISSING_PACKAGES[*]}${NC}"
     echo -e "${YELLOW}Install with: pip install ${MISSING_PACKAGES[*]}${NC}"
 fi
+
+# Install user-level command aliases for Claude Code v2.
+# Some builds expose plugin commands only in namespaced form (`/cli-anything:default`).
+# These aliases make `/cli-anything` and related commands always available.
+echo ""
+echo "Installing command aliases in ~/.claude/commands ..."
+CLAUDE_COMMANDS_DIR="${HOME}/.claude/commands"
+mkdir -p "${CLAUDE_COMMANDS_DIR}/cli-anything"
+
+cat > "${CLAUDE_COMMANDS_DIR}/cli-anything.md" <<'EOF'
+---
+description: Build a CLI-Anything harness for a local path or repository.
+---
+Read HARNESS.md from the installed cli-anything plugin if available, then execute the full cli-anything build workflow for: $ARGUMENTS
+EOF
+
+cat > "${CLAUDE_COMMANDS_DIR}/cli-anything/default.md" <<'EOF'
+---
+description: Build a CLI-Anything harness for a local path or repository.
+---
+Read HARNESS.md from the installed cli-anything plugin if available, then execute the full cli-anything build workflow for: $ARGUMENTS
+EOF
+
+cat > "${CLAUDE_COMMANDS_DIR}/cli-anything/refine.md" <<'EOF'
+---
+description: Refine an existing harness and expand capability coverage.
+---
+Read HARNESS.md from the installed cli-anything plugin if available, then refine the existing harness using this input: $ARGUMENTS
+EOF
+
+cat > "${CLAUDE_COMMANDS_DIR}/cli-anything/test.md" <<'EOF'
+---
+description: Run harness tests and update TEST.md with results.
+---
+Read HARNESS.md from the installed cli-anything plugin if available, then run the test workflow for: $ARGUMENTS
+EOF
+
+cat > "${CLAUDE_COMMANDS_DIR}/cli-anything/validate.md" <<'EOF'
+---
+description: Validate a harness against HARNESS.md standards.
+---
+Read HARNESS.md from the installed cli-anything plugin if available, then run the validation workflow for: $ARGUMENTS
+EOF
+
+cat > "${CLAUDE_COMMANDS_DIR}/cli-anything/list.md" <<'EOF'
+---
+description: List discovered CLI-Anything harnesses.
+---
+List and summarize discovered CLI-Anything harnesses using this input: $ARGUMENTS
+EOF
+
+echo -e "${GREEN}✓${NC} Installed command aliases at ${CLAUDE_COMMANDS_DIR}"
 
 echo ""
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
